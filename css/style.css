@@ -1,0 +1,139 @@
+/* --- Custom Dark Theme for Japan Travel Planner --- */
+
+:root {
+    --dark-bg: #222831;
+    --component-bg: #393E46;
+    --accent-color: #00ADB5;
+    --text-color: #EEEEEE;
+    --border-color: #4a5058;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+}
+
+body {
+    background-color: var(--dark-bg);
+    color: var(--text-color);
+}
+
+/* --- Navigation Bar --- */
+.navbar {
+    background-color: var(--component-bg) !important; /* Override Bootstrap's bg-dark */
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    color: var(--accent-color) !important;
+}
+
+.nav-link {
+    color: var(--text-color) !important;
+}
+
+.nav-link:hover {
+    color: var(--accent-color) !important;
+}
+
+/* --- Cards and Modals --- */
+.card, .modal-content {
+    background-color: var(--component-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+}
+
+.card-title, .modal-title {
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+/* --- Forms --- */
+.form-control {
+    background-color: var(--dark-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+.form-control:focus {
+    background-color: var(--dark-bg);
+    border-color: var(--accent-color);
+    color: var(--text-color);
+    box-shadow: 0 0 0 0.25rem rgba(0, 173, 181, 0.25);
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+/* --- Buttons --- */
+.btn-primary {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #fff;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: #007f85; /* A darker shade of the accent color */
+    border-color: #007f85;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+/* --- List Groups (for trip list) --- */
+.list-group-item {
+    background-color: var(--component-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    margin-bottom: 5px; /* Add some space between items */
+    border-radius: 0.25rem;
+}
+
+.list-group-item-action:hover, .list-group-item-action:focus {
+    background-color: #495057;
+    color: var(--text-color);
+}
+
+/* --- Tabs --- */
+.nav-tabs {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.nav-tabs .nav-link {
+    border: 1px solid transparent;
+    border-bottom: none;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: var(--component-bg);
+    border-color: var(--border-color);
+    border-bottom: 1px solid var(--component-bg); /* Hide bottom border */
+    color: var(--accent-color) !important;
+    font-weight: bold;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: var(--border-color);
+}
+
+.tab-content {
+    background-color: var(--component-bg);
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+/* --- Alerts --- */
+.alert-success {
+    background-color: rgba(40, 167, 69, 0.2);
+    color: #a7d7b6;
+    border: 1px solid var(--success-color);
+}
+
+.alert-danger {
+    background-color: rgba(220, 53, 69, 0.2);
+    color: #f8d7da;
+    border: 1px solid var(--danger-color);
+}
