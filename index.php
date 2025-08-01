@@ -1,177 +1,104 @@
 <?php
-// ====================================================================
-// PHP-Logik (Backend)
-// ====================================================================
+require_once 'includes/database.php';
 
-// Hier würden Sie die Datenbankverbindung herstellen.
-// Für SQLite ist dies sehr einfach.
-// In einer echten Anwendung würden Sie die Datenbankverbindung
-// und die Authentifizierungslogik in separate Dateien auslagern.
-
-// Platzhalter für die SQLite-Datenbankverbindung
-$db = null;
-try {
-    // Erstellt die Datenbankdatei, falls sie nicht existiert
-    $db = new PDO('sqlite:travel_app.db');
-    // Aktiviert die Fehlerausgabe für PDO
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
-    // Beispiel: Eine einfache Tabelle erstellen, falls sie noch nicht existiert.
-    // Dies sollte nur einmalig beim Start der Anwendung ausgeführt werden.
-    $db->exec("CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL
-    )");
-
-} catch (PDOException $e) {
-    // Bei einem Verbindungsfehler die Fehlermeldung ausgeben
-    die("Datenbankverbindung fehlgeschlagen: " . $e->getMessage());
-}
-
-// Session-Management starten, um den Benutzerstatus zu verfolgen
+// This will be the main dashboard page, so we need to check for a valid session.
 session_start();
 
-// Einfache Logik, um zu prüfen, ob ein Benutzer eingeloggt ist
-$isLoggedIn = isset($_SESSION['user_id']);
-$username = $isLoggedIn ? $_SESSION['username'] : 'Gast';
+// If the user is not logged in, redirect to the login page.
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
 
-// ====================================================================
-// HTML-Struktur (Frontend)
-// ====================================================================
+$pdo = get_db_connection();
+$error_message = '';
+$success_message = '';
+
+// Handle new trip creation
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_trip'])) {
+    $trip_name = trim($_POST['trip_name']);
+    $start_date = $_POST['start_date'];
+    $end_date = $_POST['end_date'];
+
+    if (empty($trip_name) || empty($start_date) || empty($end_date)) {
+        $error_message = 'Please fill in all fields for the new trip.';
+    } elseif (strtotime($start_date) > strtotime($end_date)) {
+        $error_message = 'Start date cannot be after the end date.';
+    } else {
+        $stmt = $pdo->prepare('INSERT INTO trips (trip_name, start_date, end_date) VALUES (?, ?, ?)');
+        if ($stmt->execute([$trip_name, $start_date, $end_date])) {
+            $success_message = 'Trip created successfully!';
+        } else {
+            $error_message = 'Failed to create the trip. Please try again.';
+        }
+    }
+}
+
+// Fetch all trips to display on the dashboard
+$trips_stmt = $pdo->query('SELECT id, trip_name, start_date, end_date FROM trips ORDER BY start_date ASC');
+$trips = $trips_stmt->fetchAll();
+
+include 'includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japan Travel App - Startseite</title>
-    <!-- Bootstrap CSS über CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        /* ==================================================================== */
-        /* CSS-Styling (für Bootstrap-Anpassungen und eigene Styles) */
-        /* ==================================================================== */
-        body {
-            background-color: #f8f9fa; /* Leichter grauer Hintergrund */
-            font-family: 'Inter', sans-serif;
-        }
-        .navbar {
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .hero-section {
-            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://placehold.co/1200x600/34495e/ffffff?text=Japan-Reise');
-            background-size: cover;
-            background-position: center;
-            color: white;
-            padding: 5rem 0;
-            margin-top: 56px; /* Offset für die feste Navbar */
-            text-align: center;
-        }
-        .feature-card {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            padding: 2rem;
-            margin-top: -3rem; /* Visueller Effekt, dass die Karte in den Hero-Bereich ragt */
-        }
-        .btn-primary {
-            background-color: #34495e;
-            border-color: #34495e;
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover {
-            background-color: #2c3e50;
-            border-color: #2c3e50;
-        }
-    </style>
-</head>
-<body>
-    <!-- ==================================================================== -->
-    <!-- Bootstrap Navbar -->
-    <!-- ==================================================================== -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-geo-alt-fill me-2" viewBox="0 0 16 16">
-                    <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-                </svg>
-                Japan Travel App
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">Startseite</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Registrieren</a>
-                    </li>
-                </ul>
+
+<h1 class="mb-4">Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</h1>
+
+<div class="row">
+    <!-- Left column for creating trips -->
+    <div class="col-md-4">
+        <div class="card bg-secondary text-light">
+            <div class="card-body">
+                <h3 class="card-title">Create a New Trip</h3>
+
+                <?php if ($error_message): ?>
+                    <div class="alert alert-danger"><?php echo $error_message; ?></div>
+                <?php endif; ?>
+
+                <?php if ($success_message): ?>
+                    <div class="alert alert-success"><?php echo $success_message; ?></div>
+                <?php endif; ?>
+
+                <form action="index.php" method="post">
+                    <div class="mb-3">
+                        <label for="trip_name" class="form-label">Trip Name</label>
+                        <input type="text" class="form-control" id="trip_name" name="trip_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" required>
+                    </div>
+                    <button type="submit" name="create_trip" class="btn btn-primary w-100">Create Trip</button>
+                </form>
             </div>
         </div>
-    </nav>
+    </div>
 
-    <!-- ==================================================================== -->
-    <!-- Hauptinhalt der Seite -->
-    <!-- ==================================================================== -->
-    <main>
-        <!-- Hero-Sektion -->
-        <header class="hero-section">
-            <div class="container">
-                <h1 class="display-3">Willkommen, <?php echo htmlspecialchars($username); ?>!</h1>
-                <p class="lead">Plane deine unvergessliche Reise nach Japan mit deinen Freunden.</p>
-                <a href="#" class="btn btn-primary btn-lg mt-3" onclick="showWelcomeMessage()">Starte deine Reise</a>
-            </div>
-        </header>
+    <!-- Right column for listing trips -->
+    <div class="col-md-8">
+        <h2>All Planned Trips</h2>
+        <div class="list-group">
+            <?php if (empty($trips)): ?>
+                <p>No trips have been planned yet. Create one to get started!</p>
+            <?php else: ?>
+                <?php foreach ($trips as $trip): ?>
+                    <a href="trip.php?id=<?php echo $trip['id']; ?>" class="list-group-item list-group-item-action bg-secondary text-light border-dark">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1"><?php echo htmlspecialchars($trip['trip_name']); ?></h5>
+                            <small>Trip ID: <?php echo $trip['id']; ?></small>
+                        </div>
+                        <p class="mb-1">
+                            From: <?php echo date('M j, Y', strtotime($trip['start_date'])); ?>
+                            To: <?php echo date('M j, Y', strtotime($trip['end_date'])); ?>
+                        </p>
+                    </a>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
 
-        <!-- Feature-Sektion (wird dynamisch mit PHP gefüllt) -->
-        <section class="container mt-5 mb-5">
-            <div class="row">
-                <div class="col-md-8 mx-auto feature-card">
-                    <?php if ($isLoggedIn): ?>
-                        <h2>Hallo <?php echo htmlspecialchars($username); ?>!</h2>
-                        <p>Hier siehst du bald eine Übersicht deiner Reisen und anstehenden Aufgaben.</p>
-                        <button class="btn btn-outline-secondary">Neue Reise planen</button>
-                    <?php else: ?>
-                        <h2>Dein persönlicher Reiseplaner</h2>
-                        <p>Melde dich an, um mit der Planung deiner Japan-Reise zu beginnen. Verwalte Flüge, Hotels, Finanzen und Packlisten in einer App.</p>
-                        <a href="#" class="btn btn-primary">Jetzt anmelden</a>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- ==================================================================== -->
-    <!-- JavaScript (JS) -->
-    <!-- ==================================================================== -->
-    <!-- Bootstrap JS über CDN (mit Popper.js für Dropdowns etc.) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Eine einfache JavaScript-Funktion, die aufgerufen wird, wenn der Button geklickt wird
-        function showWelcomeMessage() {
-            alert('Willkommen bei deiner Japan Travel App! Bald kannst du hier alles planen.');
-        }
-
-        // Alternative, modernere Methode, die Popups vermeidet
-        // function showWelcomeMessage() {
-        //     const mainContent = document.querySelector('main');
-        //     const messageDiv = document.createElement('div');
-        //     messageDiv.className = 'alert alert-info alert-dismissible fade show fixed-top w-50 mx-auto mt-2';
-        //     messageDiv.role = 'alert';
-        //     messageDiv.innerHTML = `
-        //         Willkommen bei deiner Japan Travel App!
-        //         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        //     `;
-        //     mainContent.prepend(messageDiv);
-        // }
-    </script>
-</body>
-</html>
+<?php include 'includes/footer.php'; ?>
